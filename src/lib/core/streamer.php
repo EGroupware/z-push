@@ -245,6 +245,11 @@ class Streamer implements Serializable {
         foreach($this->mapping as $tag => $map) {
             if(isset($this->{$map[self::STREAMER_VAR]})) {
                 // Variable is available
+	            // Variable is a (EGroupware\Api)\DateTime --> convert it to timestamp in server-time expected by z-Push
+	            if ($this->{$map[self::STREAMER_VAR]} instanceof \DateTime && class_exists('EGroupware\\Api\\DateTime'))
+				{
+		            $this->{$map[self::STREAMER_VAR]} = EGroupware\Api\DateTime::user2server($this->{$map[self::STREAMER_VAR]}, 'ts');
+		        }
                 if(is_object($this->{$map[self::STREAMER_VAR]})) {
                     // Subobjects can do their own encoding
                     if ($this->{$map[self::STREAMER_VAR]} instanceof Streamer) {
