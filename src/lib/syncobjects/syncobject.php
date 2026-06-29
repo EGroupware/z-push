@@ -528,8 +528,14 @@ abstract class SyncObject extends Streamer {
                                 ZLog::Write(LOGLEVEL_WARN, sprintf("SyncObject->Check(): Unmet condition in object from type %s: parameter '%s' can not be compared, as the comparable is not set. Check failed!", $objClass, $v[self::STREAMER_VAR]));
                                 return false;
                             }
-                            if ( ($rule == self::STREAMER_CHECK_CMPHIGHER && (float)$this->{$v[self::STREAMER_VAR]} < $cmp) ||
-                                 ($rule == self::STREAMER_CHECK_CMPLOWER  && (float)$this->{$v[self::STREAMER_VAR]} > $cmp)
+	                        // We must NOT cast DateTime objects when comparing, as the comparison only works for the object!
+	                        // But we must cast e.g. "" as since PHP 8: ("" < -1) === true, causing provisioning to fail
+	                        // SyncObject->Check(): Unmet condition in object from type SyncProvisioning: parameter 'maxattsize' is LOWER than '-1'. Check failed!
+	                        // FatalException: Invalid policies! - code: 0 - file: /var/www/epl-trunk/vendor/egroupware/z-push-dev/src/lib/request/provisioning.php:220
+							$to_compare_with = $this->{$v[self::STREAMER_VAR]} instanceof \DateTimeInterface ?
+								$this->{$v[self::STREAMER_VAR]} : (float) $this->{$v[self::STREAMER_VAR]};
+                            if ( ($rule == self::STREAMER_CHECK_CMPHIGHER && $to_compare_with < $cmp) ||
+                                 ($rule == self::STREAMER_CHECK_CMPLOWER  && $to_compare_with > $cmp)
                                 ) {
 
                                 ZLog::Write(LOGLEVEL_WARN, sprintf("SyncObject->Check(): Unmet condition in object from type %s: parameter '%s' is %s than '%s'. Check failed!",
